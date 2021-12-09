@@ -9,7 +9,8 @@ ncolumns = len(input9[0])-1
 clusters = {}
 for r in range(nrows):
     for c in range(ncolumns):
-        clusters[(r,c)] = [(r,c)]
+        if( input9[r][c] != '9' ):
+            clusters[(r,c)] = [(r,c)]
 
 while(True):
     changes = 0
@@ -56,29 +57,49 @@ cluster3 = None
 
 uniqueclusters = []
 
+
+
 for c in clusters:
-    clusters[c].sort()
-    if( not clusters[c] in uniqueclusters ):
-        uniqueclusters.append(clusters[c])
+    found = False
+    if( len(clusters[c]) > 1 ):
+
+        for u in uniqueclusters:
+            if( len(clusters[c]) == len(u) ):
+                for e in u:
+                    if e in clusters[c]:
+                        found = True
+                        break
+                if found:
+                    break
+        if not found:
+            uniqueclusters.append(clusters[c])
+       
 
 print(uniqueclusters)
 print(len(uniqueclusters))
 
+for l in uniqueclusters:
+    print(len(l))
+
 for c in uniqueclusters:
     lenc = len(c)
-    if( lenc >= size1 ):
-        size3 = size2
-        cluster3 = cluster2
-        size2 = size1
-        cluster2 = cluster1
+    if( lenc > size1 ):
         size1 = lenc
         cluster1 = c
-    elif( lenc > size2 ):
-        size3 = size2
-        cluster3 = cluster2
+
+uniqueclusters.remove(cluster1)
+
+for c in uniqueclusters:
+    lenc = len(c)
+    if( lenc > size2 ):
         size2 = lenc
         cluster2 = c
-    elif( lenc > size3 ):
+
+uniqueclusters.remove(cluster2)
+
+for c in uniqueclusters:
+    lenc = len(c)
+    if( lenc > size3 ):
         size3 = lenc
         cluster3 = c
 
@@ -87,3 +108,4 @@ print(cluster2)
 print(cluster3)
 
 print(size1,size2,size3,size1*size2*size3)
+
