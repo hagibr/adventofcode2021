@@ -81,5 +81,6 @@ for f in folds:
     # Como é só a primeira dobra...
     break
 
+# Só se pede a quantidade de pontos após a primeira dobra
 print(dots)
 print(len(dots))
