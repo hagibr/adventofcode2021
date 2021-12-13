@@ -64,7 +64,7 @@ print(start_paths)
 print(cave_paths)
 
 # Função auxiliar que irá ajudar a percorrer as cavernas
-def explore_caves(tracking, current_cave, cave_list):
+def explore_caves(tracking, current_cave, cave_list, can_revisit):
     tracking += f"{current_cave},"
     path_count = 0
     for p in cave_paths:
@@ -77,14 +77,18 @@ def explore_caves(tracking, current_cave, cave_list):
             elif( p[1] in cave_list ):
                 # Mas pode ser revisitada indefinidamente
                 if( p[1][0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
-                    path_count += explore_caves(tracking, p[1], cave_list)
+                    path_count += explore_caves(tracking, p[1], cave_list, can_revisit)
+                # Se ainda pode revisitar...
+                elif can_revisit:
+                    # Daqui pra baixo não pode
+                    path_count += explore_caves(tracking, p[1], cave_list, False)
                 # Se não pode ser revisitada, encontramos um caminho inválido
                 # else:
                 #     print(f"{tracking}{p[1]},invalid")
             # Se não foi visitada, vamos lá
             else:
                 cave_list.append(p[1])
-                path_count += explore_caves(tracking, p[1], cave_list)
+                path_count += explore_caves(tracking, p[1], cave_list, can_revisit)
                 cave_list.remove(p[1])
     return path_count
 
@@ -94,7 +98,7 @@ for s in start_paths:
     tracking = "start,"
     # Para cada caminho, vamos manter uma lista de cavernas que já passamos
     cave_list = [s[1]]
-    total_paths += explore_caves(tracking, s[1], cave_list)
+    total_paths += explore_caves(tracking, s[1], cave_list, True)
     # Pode tirar da lista
     cave_list.remove(s[1])
 
