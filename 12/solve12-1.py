@@ -1,4 +1,4 @@
-data = [l[:-1] for l in open("input12.txt").readlines()]
+data = [l.replace("\n","") for l in open("input12.txt").readlines()]
 
 # data = '''start-A
 # start-b
@@ -79,8 +79,8 @@ def explore_caves(tracking, current_cave, cave_list):
                 if( p[1][0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
                     path_count += explore_caves(tracking, p[1], cave_list)
                 # Se não pode ser revisitada, encontramos um caminho inválido
-                else:
-                    print(f"{tracking}{p[1]},invalid")
+                # else:
+                #     print(f"{tracking}{p[1]},invalid")
             # Se não foi visitada, vamos lá
             else:
                 cave_list.append(p[1])
@@ -94,7 +94,7 @@ for s in start_paths:
     tracking = "start,"
     # Para cada caminho, vamos manter uma lista de cavernas que já passamos
     cave_list = [s[1]]
-    total_paths += explore_caves(tracking,s[1], cave_list)
+    total_paths += explore_caves(tracking, s[1], cave_list)
     # Pode tirar da lista
     cave_list.remove(s[1])
 
