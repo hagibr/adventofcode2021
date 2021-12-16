@@ -36,17 +36,17 @@ def parse_packet(bdata, blen):
     global version_acc
     pos = 0
     # Lendo packet Version
-    version = int( bdata[pos:pos+3], 2 )
+    version = int(bdata[pos:pos+3], 2)
     # print(version)
     version_acc += version
     pos += 3
     # Lendo packet ID
-    id = int( bdata[pos:pos+3], 2 )
+    id = int(bdata[pos:pos+3], 2)
     pos += 3
     # Literal
     if( id == 4 ):
         lit_bin = ''
-        while(True):
+        while( True ):
             flag_last = int(bdata[pos:pos+1],2)
             pos += 1
             value = bdata[pos:pos+4]
@@ -62,7 +62,7 @@ def parse_packet(bdata, blen):
             lensub = int(bdata[pos:pos+15],2)
             pos += 15
             # Agora vamos analizar pelo tamanho que ocupa os subpackets
-            while(lensub > 0):
+            while( lensub > 0 ):
                 dpos = parse_packet(bdata[pos:pos+lensub], lensub)
                 pos += dpos
                 lensub -= dpos

@@ -32,16 +32,16 @@ print(data_bin)
 def parse_packet(bdata, blen):
     pos, value = 0, 0
     # Lendo packet Version
-    version = int( bdata[pos:pos+3], 2 )
+    version = int(bdata[pos:pos+3], 2)
     print(version)
     pos += 3
     # Lendo packet ID
-    id = int( bdata[pos:pos+3], 2 )
+    id = int(bdata[pos:pos+3], 2)
     pos += 3
     # Literal
     if( id == 4 ):
         lit_bin = ''
-        while(True):
+        while( True ):
             flag_last = int(bdata[pos:pos+1],2)
             pos += 1
             nibble = bdata[pos:pos+4]
@@ -55,11 +55,11 @@ def parse_packet(bdata, blen):
         length_type = int(bdata[pos:pos+1],2)
         pos += 1
         sublist = [] # lista de subpackets
-        if( length_type == 0): # length ocupa os próximos 15 bits
+        if( length_type == 0 ): # length ocupa os próximos 15 bits
             lensub = int(bdata[pos:pos+15],2)
             pos += 15
             # Agora vamos analizar pelo tamanho que ocupa os subpackets
-            while(lensub > 0):
+            while( lensub > 0 ):
                 dpos, dvalue = parse_packet(bdata[pos:pos+lensub], lensub)
                 pos += dpos
                 sublist.append(dvalue)
