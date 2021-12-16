@@ -29,216 +29,87 @@ for h in data_hex:
 print(data_bin)
 
 # Função recursiva que analiza os pacotes e acumula versões. O último parâmetro indica se vamos continuar ou parar quando termina um pacote.
-def parse_packet(bdata, blen, keep_parsing):
+def parse_packet(bdata, blen):
     pos, value = 0, 0
-    while(pos < blen-6): # tem que caber pelo menos o packet version e o packet id
-        # Lendo packet Version
-        version = int( bdata[pos:pos+3], 2 )
-        print(version)
-        pos += 3
-        # Lendo packet ID
-        id = int( bdata[pos:pos+3], 2 )
-        pos += 3
-        # Literal
-        if( id == 4 ):
-            lit_bin = ''
-            while(True):
-                flag_last = int(bdata[pos:pos+1],2)
-                pos += 1
-                nibble = bdata[pos:pos+4]
-                pos += 4
-                lit_bin += nibble
-                if( flag_last == 0 ):
-                    break
-            value = int(lit_bin,2)
-
-        # Se não é literal, é operator
-        elif( id == 0 ): # soma dos subpackets
+    # Lendo packet Version
+    version = int( bdata[pos:pos+3], 2 )
+    print(version)
+    pos += 3
+    # Lendo packet ID
+    id = int( bdata[pos:pos+3], 2 )
+    pos += 3
+    # Literal
+    if( id == 4 ):
+        lit_bin = ''
+        while(True):
+            flag_last = int(bdata[pos:pos+1],2)
+            pos += 1
+            nibble = bdata[pos:pos+4]
+            pos += 4
+            lit_bin += nibble
+            if( flag_last == 0 ):
+                break
+        value = int(lit_bin,2)
+    # Se não é literal, é operator
+    else:
+        length_type = int(bdata[pos:pos+1],2)
+        pos += 1
+        sublist = [] # lista de subpackets
+        if( length_type == 0): # length ocupa os próximos 15 bits
+            lensub = int(bdata[pos:pos+15],2)
+            pos += 15
+            # Agora vamos analizar pelo tamanho que ocupa os subpackets
+            while(lensub > 0):
+                dpos, dvalue = parse_packet(bdata[pos:pos+lensub], lensub)
+                pos += dpos
+                sublist.append(dvalue)
+                lensub -= dpos
+        else: # número de sub-packets ocupa os próximos 11 bits
+            numsub = int(bdata[pos:pos+11],2)
+            pos += 11
+            # Analisando pela quantidade de subpackets
+            for s in range(numsub):
+                dpos, dvalue = parse_packet(bdata[pos:], blen-pos)
+                pos += dpos
+                sublist.append(dvalue)
+        
+        # Agora vamos fazer as contas
+        if( id == 0 ): # soma
             value = 0
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                while(lensub > 0):
-                    dpos, dvalue = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                    pos += dpos
-                    value += dvalue
-                    lensub -= dpos
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                # Analisando pela quantidade de subpackets
-                for s in range(numsub):
-                    dpos, dvalue = parse_packet(bdata[pos:], blen-pos, False)
-                    pos += dpos
-                    value += dvalue
-
-        elif( id == 1 ): # produto dos subpackets
-            value = 1 # Então, o elemento neutro é 1
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                while(lensub > 0):
-                    dpos, dvalue = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                    pos += dpos
-                    value *= dvalue
-                    lensub -= dpos
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                # Analisando pela quantidade de subpackets
-                for s in range(numsub):
-                    dpos, dvalue = parse_packet(bdata[pos:], blen-pos, False)
-                    pos += dpos
-                    value *= dvalue
-
-        elif( id == 2 ): # valor mínimo dos subpackets
+            for i in sublist:
+                value += i
+        elif( id == 1 ): # produto
+            value = 1
+            for i in sublist:
+                value *= i
+        elif( id == 2 ): # valor mínimo
             value = None
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                while(lensub > 0):
-                    dpos, dvalue = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                    pos += dpos
-                    if( value == None or value > dvalue ):
-                        value = dvalue
-                    lensub -= dpos
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                # Analisando pela quantidade de subpackets
-                for s in range(numsub):
-                    dpos, dvalue = parse_packet(bdata[pos:], blen-pos, False)
-                    pos += dpos
-                    if( value == None or value > dvalue ):
-                        value = dvalue
-
-        elif( id == 3 ): # valor máximo dos subpackets
+            for i in sublist:
+                if( value == None or i < value ):
+                    value = i
+        elif( id == 3 ): # valor máximo
             value = None
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                while(lensub > 0):
-                    dpos, dvalue = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                    pos += dpos
-                    if( value == None or value < dvalue ):
-                        value = dvalue
-                    lensub -= dpos
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                # Analisando pela quantidade de subpackets
-                for s in range(numsub):
-                    dpos, dvalue = parse_packet(bdata[pos:], blen-pos, False)
-                    pos += dpos
-                    if( value == None or value > dvalue ):
-                        value = dvalue
-
-        elif( id == 5 ): # "maior que". Sempre tem 2 subpackets para comparar.
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                dpos, v1 = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                pos += dpos
-                lensub -= dpos
-                dpos, v2 = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                pos += dpos
-                lensub -= dpos
-                if( v1 > v2 ):
-                    value = 1
-                else:
-                    value = 0
-
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                dpos, v1 = parse_packet(bdata[pos:], blen-pos, False)
-                pos += dpos
-                dpos, v2 = parse_packet(bdata[pos:], blen-pos, False)
-                pos += dpos
-                if( v1 > v2 ):
-                    value = 1
-                else:
-                    value = 0
-                    
-        elif( id == 6 ): # "menor que". Sempre tem 2 subpackets para comparar.
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                dpos, v1 = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                pos += dpos
-                lensub -= dpos
-                dpos, v2 = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                pos += dpos
-                lensub -= dpos
-                if( v1 < v2 ):
-                    value = 1
-                else:
-                    value = 0
-
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                dpos, v1 = parse_packet(bdata[pos:], blen-pos, False)
-                pos += dpos
-                dpos, v2 = parse_packet(bdata[pos:], blen-pos, False)
-                pos += dpos
-                if( v1 < v2 ):
-                    value = 1
-                else:
-                    value = 0
-        elif( id == 7 ): # "igual a". Sempre tem 2 subpackets para comparar.
-            length_type = int(bdata[pos:pos+1],2)
-            pos += 1
-            if( length_type == 0): # length ocupa os próximos 15 bits
-                lensub = int(bdata[pos:pos+15],2)
-                pos += 15
-                # Agora vamos analizar pelo tamanho que ocupa os subpackets
-                dpos, v1 = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                pos += dpos
-                lensub -= dpos
-                dpos, v2 = parse_packet(bdata[pos:pos+lensub], lensub, True)
-                pos += dpos
-                lensub -= dpos
-                if( v1 == v2 ):
-                    value = 1
-                else:
-                    value = 0
-
-            else: # número de sub-packets ocupa os próximos 11 bits
-                numsub = int(bdata[pos:pos+11],2)
-                pos += 11
-                dpos, v1 = parse_packet(bdata[pos:], blen-pos, False)
-                pos += dpos
-                dpos, v2 = parse_packet(bdata[pos:], blen-pos, False)
-                pos += dpos
-                if( v1 == v2 ):
-                    value = 1
-                else:
-                    value = 0
-        # Se for para pararmos de analizar após achar 1 pacote
-        if( not keep_parsing ):
-            break
+            for i in sublist:
+                if( value == None or i > value):
+                    value = i
+        elif( id == 5 ): # maior que
+            if( sublist[0] > sublist[1] ):
+                value = 1
+            else:
+                value = 0
+        elif( id == 6 ): # menor que
+            if( sublist[0] < sublist[1] ):
+                value = 1
+            else:
+                value = 0
+        elif( id == 7 ): # igual a
+            if( sublist[0] == sublist[1] ):
+                value = 1
+            else:
+                value = 0
     return pos, value
 
 # Analizando o pacote inteiro, ele deve ser um pacotão único
-pos, value = parse_packet(data_bin, len(data_bin), False)
+pos, value = parse_packet(data_bin, len(data_bin))
 
 print(value)
