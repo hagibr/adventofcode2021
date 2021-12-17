@@ -28,7 +28,7 @@ for h in data_hex:
 
 print(data_bin)
 
-# Função recursiva que analiza os pacotes e acumula versões. O último parâmetro indica se vamos continuar ou parar quando termina um pacote.
+# Função recursiva que analiza os pacotes e acumula versões.
 def parse_packet(bdata, blen):
     pos, value = 0, 0
     # Lendo packet Version
