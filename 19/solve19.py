@@ -56,24 +56,89 @@ def beacon_view(beacon, scanner):
 # Retorna as 24 rotações possíveis
 def beacon_view_rotate(view):
     rotations = []
-    rotations.append(view)                              # x,y,z
-    rotations.append([[d[0],-d[2],d[1]] for d in view]) # x,-z,y
-    rotations.append([[d[0],-d[1],-d[2]] for d in view])# x,-y,-z
-    rotations.append([[d[0],d[2],-d[1]] for d in view]) # x,z,-7
+    rotations.append(view)                                #  x, y, z
+    rotations.append([[ d[0],-d[2], d[1]] for d in view]) #  x,-z, y
+    rotations.append([[ d[0],-d[1],-d[2]] for d in view]) #  x,-y,-z
+    rotations.append([[ d[0], d[2],-d[1]] for d in view]) #  x, z,-y
 
-    rotations.append([[d[1],d[2],d[0]] for d in view])  # y,z,x
-    rotations.append([[d[1],-d[0],d[2]] for d in view]) # y,-x,z
-    rotations.append([[d[1],-d[2],-d[0]] for d in view])# y,-z,-x
-    rotations.append([[d[1],d[0],-d[2]] for d in view]) # y,x,-z
+    rotations.append([[ d[1], d[2], d[0]] for d in view]) #  y, z, x
+    rotations.append([[ d[1],-d[0], d[2]] for d in view]) #  y,-x, z
+    rotations.append([[ d[1],-d[2],-d[0]] for d in view]) #  y,-z,-x
+    rotations.append([[ d[1], d[0],-d[2]] for d in view]) #  y, x,-z
     
-    rotations.append([[d[2],d[0],d[1]] for d in view])  # z,x,y
-    rotations.append([[d[2],-d[1],d[0]] for d in view]) # z,-y,x
-    rotations.append([[d[2],-d[0],-d[1]] for d in view])# z,-x,-y
-    rotations.append([[d[2],d[1],-d[0]] for d in view]) # z,y,-x
+    rotations.append([[ d[2], d[0], d[1]] for d in view]) #  z, x, y
+    rotations.append([[ d[2],-d[1], d[0]] for d in view]) #  z,-y, x
+    rotations.append([[ d[2],-d[0],-d[1]] for d in view]) #  z,-x,-y
+    rotations.append([[ d[2], d[1],-d[0]] for d in view]) #  z, y,-x
     
+    rotations.append([[-d[0],-d[1], d[2]] for d in view]) # -x,-y, z
+    rotations.append([[-d[0],-d[2],-d[1]] for d in view]) # -x,-z,-y
+    rotations.append([[-d[0], d[1],-d[2]] for d in view]) # -x, y,-z
+    rotations.append([[-d[0], d[2], d[1]] for d in view]) # -x, z, y
+    
+    rotations.append([[-d[1],-d[2], d[0]] for d in view]) # -y,-z, x
+    rotations.append([[-d[1],-d[0],-d[2]] for d in view]) # -y,-x,-z
+    rotations.append([[-d[1], d[2],-d[0]] for d in view]) # -y, z,-x
+    rotations.append([[-d[1],-d[0], d[2]] for d in view]) # -y,-x, z
 
+    rotations.append([[-d[2],-d[0], d[1]] for d in view]) # -z,-x, y
+    rotations.append([[-d[2],-d[1],-d[0]] for d in view]) # -z,-y,-x
+    rotations.append([[-d[2], d[0],-d[1]] for d in view]) # -z, x,-y
+    rotations.append([[-d[2], d[1], d[0]] for d in view]) # -z, y, x
+
+def beacon_get_min_max(view):
+    minx = maxx = view[0][0]
+    miny = maxy = view[0][1]
+    minz = maxz = view[0][2]
+    for v in view:
+        if( v[0] > maxx ):
+            maxx = v[0]
+        elif( v[0] < minx ):
+            minx = v[0]
+        if( v[1] > maxy ):
+            maxy = v[1]
+        elif( v[1] < miny ):
+            miny = v[1]
+        if( v[2] > maxz ):
+            maxz = v[2]
+        elif( v[2] < minz ):
+            minz = v[2]
+    return [minx,maxx,miny,maxy,minz,maxz]
+        
 # Loop de trabalho. Precisamos limpar todos os scanners
 while( len( scanner_list ) > 0 ):
     scanner = scanner_list[0]
     for beacon in scanner:
+        # Pega a visão deste beacon usando a referência inicial dele
         beacon_view_0 = beacon_view(beacon, scanner)
+        # Gera as 24 rotações deste beacon
+        beacon_views = beacon_view_rotate(beacon_view_0)
+        for bview in beacon_views:
+            minmax_b = beacon_get_min_max(bview)
+            # Compara a visão deste beacon com as visões dos beacons vistos pelo scanner de referência
+            for bref in refscanner:
+                bref_view_0 = beacon_view(bref, refscanner)
+                minmax_ref = beacon_get_min_max(bref_view_0)
+                # Primeiro vamos encontrar a interseção dos 2 cubos
+                minmax_common = [max(minmax_b[0],minmax_ref[0]), min(minmax_b[1],minmax_ref[1]),
+                                 max(minmax_b[2],minmax_ref[2]), min(minmax_b[3],minmax_ref[3]),
+                                 max(minmax_b[4],minmax_ref[4]), min(minmax_b[5],minmax_ref[5])]
+                # Agora vamos verificar se todos os beacons nessa interseção batem e precisamos
+                # também que se tenha pelo menos 3 beacons
+                nomatch = False
+                matchcount = 0
+                for b in bref:
+                    if( b[0] >= minmax_common[0] and b[0] <= minmax_common[1] and
+                        b[1] >= minmax_common[2] and b[1] <= minmax_common[3] and
+                        b[2] >= minmax_common[4] and b[2] <= minmax_common[5] ):
+                        
+                        if( b in bview ):
+                            matchcount += 1
+                        else:
+                            nomatch = True
+                            break
+                
+                # Parece que encontrou uma equivalência aqui
+                if( not nomatch and matchcount >= 3 ):
+                    # TODO: pegar a lista de beacons atuais, fazer a rotação e colocar na lista bref
+                    print("match")
