@@ -129,7 +129,7 @@ while( len( scanner_list ) > 0 ):
                 # também que se tenha pelo menos 3 beacons
                 nomatch = False
                 matchcount = 0
-                for b in bref:
+                for b in bref: # que diabos é isso?
                     if( b[0] >= minmax_common[0] and b[0] <= minmax_common[1] and
                         b[1] >= minmax_common[2] and b[1] <= minmax_common[3] and
                         b[2] >= minmax_common[4] and b[2] <= minmax_common[5] ):
