@@ -85,6 +85,8 @@ def beacon_view_rotate(view):
     rotations.append([[-d[2],-d[1],-d[0]] for d in view]) # -z,-y,-x
     rotations.append([[-d[2], d[0],-d[1]] for d in view]) # -z, x,-y
     rotations.append([[-d[2], d[1], d[0]] for d in view]) # -z, y, x
+    
+    return rotations
 
 def beacon_get_min_max(view):
     minx = maxx = view[0][0]
